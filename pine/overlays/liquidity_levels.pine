@@ -1,0 +1,31 @@
+//@version=5
+// Mesa de micros - niveles de liquidez (solo dibuja): high/low del día previo (RTH) y swings fractales
+indicator("Mesa de micros - Liquidez", overlay = true, max_lines_count = 200)
+
+swingK = input.int(2, "Swing k (barras a cada lado)", minval = 1, maxval = 5)
+tz = "America/New_York"
+inRth = not na(time(timeframe.period, "0930-1600", tz))
+rthStart = inRth and not inRth[1]
+
+var float dayHigh = na
+var float dayLow = na
+var float prevHigh = na
+var float prevLow = na
+if rthStart
+    prevHigh := dayHigh
+    prevLow := dayLow
+    dayHigh := high
+    dayLow := low
+else if inRth
+    dayHigh := math.max(dayHigh, high)
+    dayLow := math.min(dayLow, low)
+
+plot(inRth ? prevHigh : na, "High día previo", color.new(color.red, 20), 1, plot.style_linebr)
+plot(inRth ? prevLow : na, "Low día previo", color.new(color.green, 20), 1, plot.style_linebr)
+
+ph = ta.pivothigh(high, swingK, swingK)
+pl = ta.pivotlow(low, swingK, swingK)
+plotshape(inRth and not na(ph), "Swing alto", shape.triangledown, location.abovebar, color.new(color.red, 30),
+     offset = -swingK, size = size.tiny)
+plotshape(inRth and not na(pl), "Swing bajo", shape.triangleup, location.belowbar, color.new(color.green, 30),
+     offset = -swingK, size = size.tiny)

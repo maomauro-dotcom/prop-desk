@@ -1,0 +1,33 @@
+//@version=5
+// Mesa de micros - puente de barras TradingView -> /webhook/bars
+// Envía UNA alerta por cierre de vela de 1 minuto con OHLCV en JSON.
+// Este script NO envía órdenes y no toma decisiones: solo reporta la barra cerrada.
+//
+// Uso: gráfico de 1 minuto de MNQ1! o MES1! (CME), añade el indicador, rellena "Webhook secret",
+// crea una alerta con condición = este indicador, "Any alert() function call",
+// y en Notificaciones activa Webhook URL = https://<tu-backend>/webhook/bars
+// El secreto queda guardado en tu cuenta de TradingView, nunca en el repo.
+indicator("Mesa de micros - bar bridge", overlay = true)
+
+secret = input.string("", "Webhook secret (WEBHOOK_SECRET)")
+rthOnly = input.bool(true, "Solo RTH 09:30-16:00 ET")
+
+if timeframe.period != "1"
+    runtime.error("Usa este puente en un gráfico de 1 minuto.")
+
+inRth = not na(time(timeframe.period, "0930-1600", "America/New_York"))
+
+f_num(x) => str.tostring(x, format.mintick)
+
+// Timestamp = apertura de la barra en hora de Nueva York, sin offset (el backend interpreta naive = America/New_York).
+ts = str.format_time(time, "yyyy-MM-dd'T'HH:mm:ss", "America/New_York")
+
+payload = '{"secret":"' + secret + '","symbol":"' + syminfo.ticker + '","timeframe":"' + timeframe.period +
+     '","open":' + f_num(open) + ',"high":' + f_num(high) + ',"low":' + f_num(low) + ',"close":' + f_num(close) +
+     ',"volume":' + str.tostring(volume, "#") + ',"timestamp":"' + ts + '"}'
+
+if barstate.isconfirmed and barstate.isrealtime and (not rthOnly or inRth)
+    alert(payload, alert.freq_once_per_bar_close)
+
+plotshape(barstate.isconfirmed and barstate.isrealtime and (not rthOnly or inRth), "Barra enviada", shape.circle,
+     location.bottom, color.new(color.gray, 60), size = size.tiny)

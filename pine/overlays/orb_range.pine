@@ -1,0 +1,26 @@
+//@version=5
+// Mesa de micros - Opening Range (solo dibuja; sin alertas ni órdenes)
+indicator("Mesa de micros - ORB", overlay = true)
+
+rangeMinutes = input.int(15, "Minutos del rango", minval = 5, maxval = 15)
+entryEndMin = input.int(660, "Fin de entradas (minutos desde medianoche ET, 660 = 11:00)")
+
+tz = "America/New_York"
+inRth = not na(time(timeframe.period, "0930-1600", tz))
+minOfDay = hour(time, tz) * 60 + minute(time, tz)
+inRange = inRth and minOfDay < 570 + rangeMinutes
+inWindow = inRth and minOfDay >= 570 + rangeMinutes and minOfDay < entryEndMin
+rthStart = inRth and not inRth[1]
+
+var float orHigh = na
+var float orLow = na
+if rthStart
+    orHigh := na
+    orLow := na
+if inRange
+    orHigh := na(orHigh) ? high : math.max(orHigh, high)
+    orLow := na(orLow) ? low : math.min(orLow, low)
+
+plot(inWindow ? orHigh : na, "ORB alto", color.new(color.teal, 0), 2, plot.style_linebr)
+plot(inWindow ? orLow : na, "ORB bajo", color.new(color.orange, 0), 2, plot.style_linebr)
+bgcolor(inRange ? color.new(color.gray, 88) : na, title = "Rango de apertura")

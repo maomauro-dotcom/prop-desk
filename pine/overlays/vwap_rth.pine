@@ -1,0 +1,28 @@
+//@version=5
+// Mesa de micros - VWAP RTH anclado a las 09:30 ET con bandas (solo dibuja)
+indicator("Mesa de micros - VWAP RTH", overlay = true)
+
+bandSigma = input.float(2.0, "Banda (sigma)", minval = 0.5, maxval = 4.0, step = 0.5)
+tz = "America/New_York"
+inRth = not na(time(timeframe.period, "0930-1600", tz))
+rthStart = inRth and not inRth[1]
+
+var float cumV = 0.0
+var float cumPV = 0.0
+var float cumPV2 = 0.0
+tp = hlc3
+if rthStart
+    cumV := 0.0
+    cumPV := 0.0
+    cumPV2 := 0.0
+if inRth
+    cumV += volume
+    cumPV += tp * volume
+    cumPV2 += tp * tp * volume
+
+vw = inRth and cumV > 0 ? cumPV / cumV : na
+sd = inRth and cumV > 0 ? math.sqrt(math.max(cumPV2 / cumV - vw * vw, 0)) : na
+
+plot(vw, "VWAP RTH", color.new(color.blue, 0), 2, plot.style_linebr)
+plot(vw + bandSigma * sd, "Banda superior", color.new(color.blue, 60), 1, plot.style_linebr)
+plot(vw - bandSigma * sd, "Banda inferior", color.new(color.blue, 60), 1, plot.style_linebr)

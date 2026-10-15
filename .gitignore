@@ -1,0 +1,13 @@
+.env
+*.db
+*.sqlite
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+node_modules/
+.next/
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.env.local
+*.egg-info/
